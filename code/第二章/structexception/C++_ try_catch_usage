@@ -1,0 +1,253 @@
+c++中 try 和catch的用法
+一、简单的例子
+
+　　单刀直入，首先通过一个简单的例子来看基本的用法。
+
+#include<iostream.h>                            //包含头文件
+#include<stdlib.h>
+double fuc(double x, double y)                        //定义函数
+{
+if(y==0)
+{
+throw y;                                    //除数为0，抛出异常
+}
+return x/y;                                    //否则返回两个数的商
+}
+void main()
+{
+double res;
+try                                            //定义异常
+{
+res=fuc(2,3);
+cout<<"The result of x/y is : "<<res<<endl;
+res=fuc(4,0);                                //出现异常
+}
+catch(double)                                    //捕获并处理异常
+{
+ cerr<<"error of dividing zero.\n";
+  exit(1);                                    //异常退出程序
+ }
+}
+　　catch 的数据类型需要与throw出来的数据类型相匹配的。
+
+
+
+　　二、catch（...）的作用
+
+　　catch(…)能够捕获多种数据类型的异常对象，所以它提供给程序员一种对异常对象更好的控制手段，使开发的软件系统有很好的可靠性。因此一个比较有经验的程序员通常会这样组织编写它的代码模块，如下：
+
+
+void Func()
+{
+try
+{
+    // 这里的程序代码完成真正复杂的计算工作，这些代码在执行过程中
+    // 有可能抛出DataType1、DataType2和DataType3类型的异常对象。
+}
+catch(DataType1& d1)
+{
+}
+catch(DataType2& d2)
+{
+}
+catch(DataType3& d3)
+{
+}
+// 注意上面try block中可能抛出的DataType1、DataType2和DataType3三
+// 种类型的异常对象在前面都已经有对应的catch block来处理。但为什么
+// 还要在最后再定义一个catch(…) block呢？这就是为了有更好的安全性和
+// 可靠性，避免上面的try block抛出了其它未考虑到的异常对象时导致的程
+// 序出现意外崩溃的严重后果，而且这在用VC开发的系统上更特别有效，因
+// 为catch(…)能捕获系统出现的异常，而系统异常往往令程序员头痛了，现
+// 在系统一般都比较复杂，而且由很多人共同开发，一不小心就会导致一个
+// 指针变量指向了其它非法区域，结果意外灾难不幸发生了。catch(…)为这种
+// 潜在的隐患提供了一种有效的补救措施。
+catch(…)
+{
+}
+}
+　　三、异常中采用面向对象的处理
+
+　　首先看下面的例子：
+
+void OpenFile(string f)
+{
+try
+{
+   // 打开文件的操作，可能抛出FileOpenException
+}
+catch(FileOpenException& fe)
+{
+   // 处理这个异常，如果这个异常可以很好的得以恢复，那么处理完毕后函数
+   // 正常返回；否则必须重新抛出这个异常，以供上层的调用函数来能再次处
+   // 理这个异常对象
+   int result = ReOpenFile(f);
+   if (result == false) throw;
+}
+}
+void ReadFile(File f)
+{
+try
+{
+   // 从文件中读数据，可能抛出FileReadException
+}
+catch(FileReadException& fe)
+{
+   // 处理这个异常，如果这个异常可以很好的得以恢复，那么处理完毕后函数
+   // 正常返回；否则必须重新抛出这个异常，以供上层的调用函数来能再次处
+   // 理这个异常对象
+   int result = ReReadFile(f);
+   if (result == false) throw;
+}
+}
+void WriteFile(File f)
+{
+try
+{
+    // 往文件中写数据，可能抛出FileWriteException
+}
+catch(FileWriteException& fe)
+{
+    // 处理这个异常，如果这个异常可以很好的得以恢复，那么处理完毕后函数
+// 正常返回；否则必须重新抛出这个异常，以供上层的调用函数来能再次处理这个异对象
+    int result = ReWriteFile(f);
+    if (result == false) throw; 
+} 
+}
+void Func()
+{
+try
+{
+   // 对文件进行操作，可能出现FileWriteException、FileWriteException
+   // 和FileWriteException异常
+   OpenFile(…);
+   ReadFile(…);
+   WriteFile(…);
+}
+// 注意：FileException是FileOpenException、FileReadException和FileWriteException
+// 的基类，因此这里定义的catch(FileException& fe)能捕获所有与文件操作失败的异
+// 常。
+catch(FileException& fe)
+{
+   ExceptionInfo* ef = fe.GetExceptionInfo();
+   cout << “操作文件时出现了不可恢复的错误，原因是：”<< fe << endl;
+}
+}
+　　下面是更多面向对象和异常处理结合的例子：
+
+#include <iostream.h>
+class ExceptionClass
+{
+    char* name;
+public:
+    ExceptionClass(const char* name="default name") 
+    {
+             cout<<"Construct "<<name<<endl;
+             this->name=name;
+    }
+   ~ExceptionClass()
+    {
+             cout<<"Destruct "<<name<<endl;
+    }
+    void mythrow()
+   {
+            throw ExceptionClass("my throw");
+   }
+}
+void main()
+{
+       ExceptionClass e("Test");
+       try
+       {
+           e.mythrow();
+       }  
+       catch(...)
+      {
+         cout<<”*********”<<endl;
+       }
+}
+　　这是输出信息：
+
+　　Construct Test
+
+　　Construct my throw
+
+　　Destruct my throw
+
+　　****************
+
+　　Destruct my throw   （这里是异常处理空间中对异常类的拷贝的析构）
+
+　　Destruct Test
+
+　　======================================
+
+　　不过一般来说可能更习惯于把会产生异常的语句和要throw的异常类分成不同的类来写，下面的代码可以是更愿意书写的：
+
+class ExceptionClass
+{
+public:
+    ExceptionClass(const char* name="Exception Default Class")
+   {
+       cout<<"Exception Class Construct String"<<endl;
+   }
+   ~ExceptionClass()
+   {
+      cout<<"Exception Class Destruct String"<<endl;
+   }
+   void ReportError()
+   {
+      cout<<"Exception Class:: This is Report Error Message"<<endl;
+   }
+};
+class ArguClass
+{
+   char* name;
+public:
+   ArguClass(char* name="default name")
+   {
+      cout<<"Construct String::"<<name<<endl;
+      this->name=name;
+   }
+   ~ArguClass()
+   {
+      cout<<"Destruct String::"<<name<<endl;
+   }
+   void mythrow()
+   {
+      throw ExceptionClass("my throw");
+   }      
+};
+_tmain()
+{
+   ArguClass e("haha");
+   try
+   {
+     e.mythrow();
+   }
+   catch(int)
+   {
+     cout<<"If This is Message display screen, This is a Error!!"<<endl;  //这行不会执行
+   }
+   catch(ExceptionClass pTest)
+   {
+      pTest.ReportError();
+   }
+   catch(...)
+  {
+       cout<<"***************"<<endl;  
+  }
+}
+　　输出Message：
+
+　　Construct String::haha
+
+　　Exception Class Construct String
+
+　　Exception Class Destruct String
+
+　　Exception Class:: This is Report Error Message
+
+　　Exception Class Destruct String
+
+　　Destruct String::haha
