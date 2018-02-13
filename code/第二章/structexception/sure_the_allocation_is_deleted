@@ -1,0 +1,45 @@
+// tryfinally.cpp: 定义控制台应用程序的入口点。
+//
+
+#include "stdafx.h"
+
+class A
+{
+public:
+	int i = 100;
+	A() {
+		printf("in construct\n");
+	}
+	~A() {
+		printf("in destruct\n");
+	}
+	A* getA() {
+	
+		return this;
+	}
+};
+
+int main()
+{
+	A* pA=0;
+	A* pB = 0;
+	try
+	{
+		//pA = new A();
+		//A();//no memory leak
+		pB = A().getA();
+		throw 1;
+		printf("never execute\n");
+		return 0;
+	}
+	catch (...)
+	{
+		printf("in catch\n");
+		//return 0;
+	}
+
+	delete pA;
+	printf("after delete\n");
+    return 0;
+}
+
